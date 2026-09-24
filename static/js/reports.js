@@ -47,6 +47,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const res = await fetch('/api/reports', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
                 body: JSON.stringify(payload),
             });
             const result = await res.json();

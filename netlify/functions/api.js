@@ -54,7 +54,8 @@ function json(statusCode, body, headers = {}) {
     statusCode,
     headers: {
       'Content-Type': 'application/json',
-      'Cache-Control': 'no-store, no-cache, must-revalidate',
+      'Cache-Control': 'private, no-store, no-cache, must-revalidate',
+      'Vary': 'Cookie',
       ...headers,
     },
     body: JSON.stringify(body),
@@ -204,23 +205,12 @@ function analyzeTrend(values, param) {
 
 async function loadStore(event) {
   connectLambda(event);
-  return getStore('ecosense');
+  return getStore('ecosense-v2');
 }
 
 async function loadState(store) {
   const existing = await store.get('app-data', { type: 'json' });
   if (existing) return existing;
-
-  const legacyUsers = await store.get('users', { type: 'json' });
-  if (legacyUsers !== null) {
-    const state = {
-      users: legacyUsers,
-      reports: (await store.get('reports', { type: 'json' })) || [],
-      history: (await store.get('history', { type: 'json' })) || [],
-    };
-    await store.setJSON('app-data', state);
-    return state;
-  }
 
   const password = await bcrypt.hash('admin123', 10);
   const state = {
@@ -246,12 +236,25 @@ function formatReportId(id) {
   return `EW-${String(id).padStart(3, '0')}`;
 }
 
+function nextUserId(state) {
+  const ids = [
+    ...state.users.map((user) => Number(user.id) || 0),
+    ...state.reports.map((report) => Number(report.user_id) || 0),
+  ];
+  return Math.max(0, ...ids) + 1;
+}
+
+function nextReportId(state) {
+  const ids = state.reports.map((report) => Number(report.id) || 0);
+  return Math.max(0, ...ids) + 1;
+}
+
 function getAreaById(areaId) {
   return areasData.areas.find((area) => String(area.id) === String(areaId));
 }
 
 function routePath(event) {
-  const raw = event.path || event.rawPath || '';
+  const raw = (event.path || event.rawPath || '').split('?')[0];
   let cleaned = raw.replace(/^\/\.netlify\/functions\/api/, '');
   if (!cleaned.startsWith('/api/') && cleaned.startsWith('/')) {
     cleaned = `/api${cleaned}`;
@@ -404,9 +407,8 @@ exports.handler = async (event, context) => {
     if (allUsers.some((entry) => entry.email === email)) {
       return json(400, { error: 'Email already registered.' });
     }
-    const nextId = allUsers.reduce((max, entry) => Math.max(max, Number(entry.id) || 0), 0) + 1;
     const nextUser = {
-      id: nextId,
+      id: nextUserId(state),
       name,
       email,
       password: await bcrypt.hash(password, 10),
@@ -425,13 +427,13 @@ exports.handler = async (event, context) => {
   if (path === '/api/reports' && method === 'POST') {
     if (!session?.user_id) return json(401, { error: 'Login required.' });
     const body = JSON.parse(event.body || '{}');
+    const current = await loadState(store);
     let photo = null;
     if (body.photo_data && body.photo_type) {
       photo = `data:${body.photo_type};base64,${body.photo_data}`;
     }
-    const nextId = reports.reduce((max, entry) => Math.max(max, Number(entry.id) || 0), 0) + 1;
     const nextReport = {
-      id: nextId,
+      id: nextReportId(current),
       user_id: Number(session.user_id),
       area_id: Number(body.area_id),
       issue_type: body.issue_type,
@@ -441,11 +443,11 @@ exports.handler = async (event, context) => {
       created_at: new Date().toISOString(),
     };
     const area = getAreaById(nextReport.area_id);
-    state.reports = [...reports, nextReport];
-    state.history = [
-      ...history,
+    current.reports = [...current.reports, nextReport];
+    current.history = [
+      ...current.history,
       {
-        id: history.length + 1,
+        id: current.history.length + 1,
         report_id: nextReport.id,
         status: 'Pending',
         admin_note: 'Report submitted by citizen',
@@ -453,7 +455,7 @@ exports.handler = async (event, context) => {
         changed_at: nextReport.created_at,
       },
     ];
-    await saveState(store, state);
+    await saveState(store, current);
     return json(200, {
       success: true,
       report_id: formatReportId(nextReport.id),
@@ -491,7 +493,8 @@ exports.handler = async (event, context) => {
 
   if (path === '/api/my-reports' && method === 'GET') {
     if (!session?.user_id) return json(401, { error: 'Login required.' });
-    const mine = reports
+    const freshState = await loadState(store);
+    const mine = freshState.reports
       .filter((report) => String(report.user_id) === String(session.user_id))
       .map((report) => ({
         ...report,

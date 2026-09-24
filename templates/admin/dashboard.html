@@ -23,7 +23,7 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', async () => {
-    const res = await fetch('/api/admin/reports');
+    const res = await fetch(`/api/admin/reports?_=${Date.now()}`, { credentials: 'same-origin' });
     const data = await res.json();
     const s = data.stats;
     document.getElementById('statsCards').innerHTML = `

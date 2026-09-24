@@ -31,7 +31,7 @@
 const pathMatch = window.location.pathname.match(/\/admin\/reports\/(\d+)/);
 const reportId = pathMatch ? parseInt(pathMatch[1], 10) : {{ report_id }};
 document.addEventListener('DOMContentLoaded', async () => {
-    const res = await fetch(`/api/reports/${reportId}`);
+    const res = await fetch(`/api/reports/${reportId}?_=${Date.now()}`, { credentials: 'same-origin' });
     const data = await res.json();
     const r = data.report;
 

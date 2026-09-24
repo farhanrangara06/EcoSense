@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const detailContent = document.getElementById('detailContent');
 
     async function loadReports() {
-        const res = await fetch('/api/my-reports');
+        const res = await fetch(`/api/my-reports?_=${Date.now()}`, { credentials: 'same-origin' });
         const data = await res.json();
         if (!data.reports || data.reports.length === 0) {
             listEl.innerHTML = '<p class="empty-msg">No reports submitted yet. <a href="/report">Report a concern</a></p>';

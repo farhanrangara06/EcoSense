@@ -45,6 +45,10 @@ def build_static_pages():
     if (ROOT / 'static').exists():
         shutil.copytree(ROOT / 'static', PUBLIC / 'static')
 
+    headers_file = ROOT / 'public' / '_headers'
+    if headers_file.exists():
+        shutil.copy2(headers_file, PUBLIC / '_headers')
+
     template_map = {
         'index.html': 'index.html',
         'dashboard.html': 'dashboard.html',
