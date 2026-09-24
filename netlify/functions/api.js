@@ -198,18 +198,14 @@ function analyzeTrend(values, param) {
   };
 }
 
-async function getStoreData(event) {
+async function loadStore(event) {
   connectLambda(event);
-  const store = getStore('ecosense');
-  const users = await store.get('users', { type: 'json' });
-  const reports = await store.get('reports', { type: 'json' });
-  const history = await store.get('history', { type: 'json' });
-  return {
-    store,
-    users: users || [],
-    reports: reports || [],
-    history: history || [],
-  };
+  return getStore('ecosense');
+}
+
+async function readJson(store, key) {
+  const value = await store.get(key, { type: 'json' });
+  return value || [];
 }
 
 async function ensureSeedData(store) {
@@ -361,8 +357,9 @@ exports.handler = async (event, context) => {
     });
   }
 
-  const { store, reports, history } = await getStoreData(event);
-  const allUsers = await ensureSeedData(store);
+  const store = await loadStore(event);
+  await ensureSeedData(store);
+  const allUsers = await readJson(store, 'users');
 
   if (path === '/api/login' && method === 'POST') {
     const body = JSON.parse(event.body || '{}');
@@ -370,7 +367,7 @@ exports.handler = async (event, context) => {
     const valid = user && await bcrypt.compare(body.password || '', user.password);
     if (!valid) return json(401, { error: 'Invalid email or password.' });
     const cookie = sessionCookie({
-      user_id: user.id,
+      user_id: Number(user.id),
       user_name: user.name,
       role: user.role,
     });
@@ -387,8 +384,9 @@ exports.handler = async (event, context) => {
     if (allUsers.some((entry) => entry.email === email)) {
       return json(400, { error: 'Email already registered.' });
     }
+    const nextId = allUsers.reduce((max, entry) => Math.max(max, Number(entry.id) || 0), 0) + 1;
     const nextUser = {
-      id: allUsers.length + 1,
+      id: nextId,
       name,
       email,
       password: await bcrypt.hash(password, 10),
@@ -401,13 +399,16 @@ exports.handler = async (event, context) => {
   if (path === '/api/reports' && method === 'POST') {
     if (!session?.user_id) return json(401, { error: 'Login required.' });
     const body = JSON.parse(event.body || '{}');
+    const reports = await readJson(store, 'reports');
+    const history = await readJson(store, 'history');
     let photo = null;
     if (body.photo_data && body.photo_type) {
       photo = `data:${body.photo_type};base64,${body.photo_data}`;
     }
+    const nextId = reports.reduce((max, entry) => Math.max(max, Number(entry.id) || 0), 0) + 1;
     const nextReport = {
-      id: reports.length + 1,
-      user_id: session.user_id,
+      id: nextId,
+      user_id: Number(session.user_id),
       area_id: Number(body.area_id),
       issue_type: body.issue_type,
       description: body.description,
@@ -440,8 +441,10 @@ exports.handler = async (event, context) => {
   const reportDetailMatch = path.match(/^\/api\/reports\/(\d+)$/);
   if (reportDetailMatch && method === 'GET') {
     if (!session?.user_id) return json(401, { error: 'Login required.' });
+    const reports = await readJson(store, 'reports');
+    const history = await readJson(store, 'history');
     const reportId = Number(reportDetailMatch[1]);
-    const report = reports.find((entry) => entry.id === reportId);
+    const report = reports.find((entry) => Number(entry.id) === reportId);
     if (!report) return json(404, { error: 'Report not found' });
     if (session.role !== 'admin' && String(report.user_id) !== String(session.user_id)) {
       return json(403, { error: 'Access denied' });
@@ -466,6 +469,7 @@ exports.handler = async (event, context) => {
 
   if (path === '/api/my-reports' && method === 'GET') {
     if (!session?.user_id) return json(401, { error: 'Login required.' });
+    const reports = await readJson(store, 'reports');
     const mine = reports
       .filter((report) => String(report.user_id) === String(session.user_id))
       .map((report) => ({
@@ -478,6 +482,7 @@ exports.handler = async (event, context) => {
 
   if (path === '/api/admin/reports' && method === 'GET') {
     if (session?.role !== 'admin') return json(403, { error: 'Admin access required.' });
+    const reports = await readJson(store, 'reports');
     const enriched = reports.map((report) => {
       const user = allUsers.find((entry) => entry.id === report.user_id);
       return {
@@ -497,6 +502,8 @@ exports.handler = async (event, context) => {
   const adminReportMatch = path.match(/^\/api\/admin\/reports\/(\d+)$/);
   if (adminReportMatch && method === 'PUT') {
     if (session?.role !== 'admin') return json(403, { error: 'Admin access required.' });
+    const reports = await readJson(store, 'reports');
+    const history = await readJson(store, 'history');
     const reportId = Number(adminReportMatch[1]);
     const body = JSON.parse(event.body || '{}');
     const updatedReports = reports.map((report) =>
