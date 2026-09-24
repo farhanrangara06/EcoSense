@@ -52,7 +52,11 @@ const EXPLANATIONS = {
 function json(statusCode, body, headers = {}) {
   return {
     statusCode,
-    headers: { 'Content-Type': 'application/json', ...headers },
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-store, no-cache, must-revalidate',
+      ...headers,
+    },
     body: JSON.stringify(body),
   };
 }
@@ -203,27 +207,39 @@ async function loadStore(event) {
   return getStore('ecosense');
 }
 
-async function readJson(store, key) {
-  const value = await store.get(key, { type: 'json' });
-  return value || [];
-}
+async function loadState(store) {
+  const existing = await store.get('app-data', { type: 'json' });
+  if (existing) return existing;
 
-async function ensureSeedData(store) {
-  const existingUsers = await store.get('users', { type: 'json' });
-  if (existingUsers !== null) return existingUsers;
+  const legacyUsers = await store.get('users', { type: 'json' });
+  if (legacyUsers !== null) {
+    const state = {
+      users: legacyUsers,
+      reports: (await store.get('reports', { type: 'json' })) || [],
+      history: (await store.get('history', { type: 'json' })) || [],
+    };
+    await store.setJSON('app-data', state);
+    return state;
+  }
 
   const password = await bcrypt.hash('admin123', 10);
-  const seeded = [{
-    id: 1,
-    name: 'Admin',
-    email: 'admin@ecosense.in',
-    password,
-    role: 'admin',
-  }];
-  await store.setJSON('users', seeded);
-  await store.setJSON('reports', []);
-  await store.setJSON('history', []);
-  return seeded;
+  const state = {
+    users: [{
+      id: 1,
+      name: 'Admin',
+      email: 'admin@ecosense.in',
+      password,
+      role: 'admin',
+    }],
+    reports: [],
+    history: [],
+  };
+  await store.setJSON('app-data', state);
+  return state;
+}
+
+async function saveState(store, state) {
+  await store.setJSON('app-data', state);
 }
 
 function formatReportId(id) {
@@ -235,9 +251,12 @@ function getAreaById(areaId) {
 }
 
 function routePath(event) {
-  const raw = event.path || '';
-  const cleaned = raw.replace(/^\/\.netlify\/functions\/api/, '').replace(/\/$/, '') || '/';
-  return cleaned;
+  const raw = event.path || event.rawPath || '';
+  let cleaned = raw.replace(/^\/\.netlify\/functions\/api/, '');
+  if (!cleaned.startsWith('/api/') && cleaned.startsWith('/')) {
+    cleaned = `/api${cleaned}`;
+  }
+  return cleaned.replace(/\/$/, '') || '/';
 }
 
 exports.handler = async (event, context) => {
@@ -257,6 +276,7 @@ exports.handler = async (event, context) => {
   if (path === '/api/session' && method === 'GET') {
     return json(200, {
       logged_in: Boolean(session?.user_id),
+      user_id: session?.user_id || null,
       user_name: session?.user_name || null,
       role: session?.role || null,
       demo_scenario: demoScenario,
@@ -358,8 +378,8 @@ exports.handler = async (event, context) => {
   }
 
   const store = await loadStore(event);
-  await ensureSeedData(store);
-  const allUsers = await readJson(store, 'users');
+  const state = await loadState(store);
+  const { users: allUsers, reports, history } = state;
 
   if (path === '/api/login' && method === 'POST') {
     const body = JSON.parse(event.body || '{}');
@@ -392,15 +412,19 @@ exports.handler = async (event, context) => {
       password: await bcrypt.hash(password, 10),
       role: 'citizen',
     };
-    await store.setJSON('users', [...allUsers, nextUser]);
-    return json(200, { success: true, redirect: '/login' });
+    state.users = [...allUsers, nextUser];
+    await saveState(store, state);
+    const cookie = sessionCookie({
+      user_id: Number(nextUser.id),
+      user_name: nextUser.name,
+      role: nextUser.role,
+    });
+    return json(200, { success: true, redirect: '/dashboard' }, { 'Set-Cookie': cookie });
   }
 
   if (path === '/api/reports' && method === 'POST') {
     if (!session?.user_id) return json(401, { error: 'Login required.' });
     const body = JSON.parse(event.body || '{}');
-    const reports = await readJson(store, 'reports');
-    const history = await readJson(store, 'history');
     let photo = null;
     if (body.photo_data && body.photo_type) {
       photo = `data:${body.photo_type};base64,${body.photo_data}`;
@@ -417,9 +441,8 @@ exports.handler = async (event, context) => {
       created_at: new Date().toISOString(),
     };
     const area = getAreaById(nextReport.area_id);
-    const stored = [...reports, nextReport];
-    await store.setJSON('reports', stored);
-    await store.setJSON('history', [
+    state.reports = [...reports, nextReport];
+    state.history = [
       ...history,
       {
         id: history.length + 1,
@@ -429,7 +452,8 @@ exports.handler = async (event, context) => {
         changed_by: session.user_id,
         changed_at: nextReport.created_at,
       },
-    ]);
+    ];
+    await saveState(store, state);
     return json(200, {
       success: true,
       report_id: formatReportId(nextReport.id),
@@ -441,8 +465,6 @@ exports.handler = async (event, context) => {
   const reportDetailMatch = path.match(/^\/api\/reports\/(\d+)$/);
   if (reportDetailMatch && method === 'GET') {
     if (!session?.user_id) return json(401, { error: 'Login required.' });
-    const reports = await readJson(store, 'reports');
-    const history = await readJson(store, 'history');
     const reportId = Number(reportDetailMatch[1]);
     const report = reports.find((entry) => Number(entry.id) === reportId);
     if (!report) return json(404, { error: 'Report not found' });
@@ -469,7 +491,6 @@ exports.handler = async (event, context) => {
 
   if (path === '/api/my-reports' && method === 'GET') {
     if (!session?.user_id) return json(401, { error: 'Login required.' });
-    const reports = await readJson(store, 'reports');
     const mine = reports
       .filter((report) => String(report.user_id) === String(session.user_id))
       .map((report) => ({
@@ -482,7 +503,6 @@ exports.handler = async (event, context) => {
 
   if (path === '/api/admin/reports' && method === 'GET') {
     if (session?.role !== 'admin') return json(403, { error: 'Admin access required.' });
-    const reports = await readJson(store, 'reports');
     const enriched = reports.map((report) => {
       const user = allUsers.find((entry) => entry.id === report.user_id);
       return {
@@ -502,15 +522,12 @@ exports.handler = async (event, context) => {
   const adminReportMatch = path.match(/^\/api\/admin\/reports\/(\d+)$/);
   if (adminReportMatch && method === 'PUT') {
     if (session?.role !== 'admin') return json(403, { error: 'Admin access required.' });
-    const reports = await readJson(store, 'reports');
-    const history = await readJson(store, 'history');
     const reportId = Number(adminReportMatch[1]);
     const body = JSON.parse(event.body || '{}');
-    const updatedReports = reports.map((report) =>
+    state.reports = reports.map((report) =>
       report.id === reportId ? { ...report, status: body.status } : report
     );
-    await store.setJSON('reports', updatedReports);
-    await store.setJSON('history', [
+    state.history = [
       ...history,
       {
         id: history.length + 1,
@@ -520,7 +537,8 @@ exports.handler = async (event, context) => {
         changed_by: session.user_id,
         changed_at: new Date().toISOString(),
       },
-    ]);
+    ];
+    await saveState(store, state);
     return json(200, { success: true });
   }
 
