@@ -9,4 +9,7 @@ static/uploads/reports/*
 !static/uploads/reports/.gitkeep
 .DS_Store
 .netlify/
+node_modules/
+package-lock.json
+public/
 *.zip

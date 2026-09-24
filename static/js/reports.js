@@ -20,7 +20,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         btn.textContent = 'Submitting...';
 
         try {
-            const res = await fetch('/api/reports', { method: 'POST', body: formData });
+            const res = await fetch('/api/reports', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    area_id: formData.get('area_id'),
+                    issue_type: formData.get('issue_type'),
+                    description: formData.get('description'),
+                }),
+            });
             const result = await res.json();
 
             if (result.success) {

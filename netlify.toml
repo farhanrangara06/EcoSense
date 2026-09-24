@@ -1,14 +1,73 @@
 [build]
-  command = "pip install -r requirements.txt"
-  functions = "netlify/functions"
+  command = "pip install -r requirements.txt && python scripts/build_netlify.py && npm install"
   publish = "public"
+  functions = "netlify/functions"
 
 [functions]
   directory = "netlify/functions"
-  included_files = ["templates/**", "static/**", "indian_cities.py", "config.py", "database.py", "data_fetcher.py", "utils.py", "app.py"]
+  included_files = ["netlify/functions/data/**"]
 
 [[redirects]]
-  from = "/*"
+  from = "/api/*"
   to = "/.netlify/functions/api/:splat"
   status = 200
-  force = true
+
+[[redirects]]
+  from = "/dashboard"
+  to = "/dashboard.html"
+  status = 200
+
+[[redirects]]
+  from = "/trends"
+  to = "/trends.html"
+  status = 200
+
+[[redirects]]
+  from = "/cities"
+  to = "/cities.html"
+  status = 200
+
+[[redirects]]
+  from = "/login"
+  to = "/login.html"
+  status = 200
+
+[[redirects]]
+  from = "/register"
+  to = "/register.html"
+  status = 200
+
+[[redirects]]
+  from = "/report"
+  to = "/report.html"
+  status = 200
+
+[[redirects]]
+  from = "/my-reports"
+  to = "/my-reports.html"
+  status = 200
+
+[[redirects]]
+  from = "/admin"
+  to = "/admin.html"
+  status = 200
+
+[[redirects]]
+  from = "/admin/reports"
+  to = "/admin/reports.html"
+  status = 200
+
+[[redirects]]
+  from = "/admin/areas"
+  to = "/admin/areas.html"
+  status = 200
+
+[[redirects]]
+  from = "/admin/readings"
+  to = "/admin/readings.html"
+  status = 200
+
+[[redirects]]
+  from = "/admin/reports/*"
+  to = "/admin/report-details.html"
+  status = 200

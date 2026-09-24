@@ -187,6 +187,53 @@ def register():
     return render_template('register.html')
 
 
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    data = request.get_json(silent=True) or {}
+    email = (data.get('email') or '').strip()
+    password = data.get('password') or ''
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'error': 'Database unavailable'}), 503
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM users WHERE email=%s", (email,))
+    user = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    if user and check_password_hash(user['password'], password):
+        session['user_id'] = user['id']
+        session['user_name'] = user['name']
+        session['role'] = user['role']
+        redirect_to = url_for('admin_dashboard') if user['role'] == 'admin' else url_for('dashboard')
+        return jsonify({'success': True, 'redirect': redirect_to})
+    return jsonify({'error': 'Invalid email or password.'}), 401
+
+
+@app.route('/api/register', methods=['POST'])
+def api_register():
+    data = request.get_json(silent=True) or {}
+    name = (data.get('name') or '').strip()
+    email = (data.get('email') or '').strip()
+    password = data.get('password') or ''
+    if not name or not email or not password:
+        return jsonify({'error': 'All fields are required.'}), 400
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'error': 'Database unavailable'}), 503
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "INSERT INTO users (name,email,password,role) VALUES (%s,%s,%s,'citizen')",
+            (name, email, generate_password_hash(password)))
+        conn.commit()
+        return jsonify({'success': True, 'redirect': url_for('login')})
+    except Exception:
+        return jsonify({'error': 'Email already registered.'}), 400
+    finally:
+        cursor.close()
+        conn.close()
+
+
 @app.route('/logout')
 def logout():
     session.clear()
@@ -294,9 +341,10 @@ def api_history(area_id):
 @app.route('/api/reports', methods=['POST'])
 @login_required
 def api_submit_report():
-    area_id = request.form.get('area_id')
-    issue_type = request.form.get('issue_type', '').strip()
-    description = request.form.get('description', '').strip()
+    data = request.get_json(silent=True) or {}
+    area_id = data.get('area_id') or request.form.get('area_id')
+    issue_type = (data.get('issue_type') or request.form.get('issue_type', '')).strip()
+    description = (data.get('description') or request.form.get('description', '')).strip()
 
     if not area_id or not issue_type or not description:
         return jsonify({'error': 'Area, issue type, and description are required.'}), 400
