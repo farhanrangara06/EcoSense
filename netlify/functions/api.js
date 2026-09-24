@@ -55,6 +55,8 @@ function json(statusCode, body, headers = {}) {
     headers: {
       'Content-Type': 'application/json',
       'Cache-Control': 'private, no-store, no-cache, must-revalidate',
+      'Netlify-CDN-Cache-Control': 'no-store',
+      'CDN-Cache-Control': 'no-store',
       'Vary': 'Cookie',
       ...headers,
     },
@@ -244,8 +246,42 @@ async function loadStateFresh(store, retries = 4) {
   return seedState(store);
 }
 
-async function saveState(store, state) {
+async function saveState(store, state, verify) {
   await store.setJSON('app-data', state);
+  if (!verify) return state;
+
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const saved = await store.get('app-data', { type: 'json' });
+    if (saved && verify(saved)) return saved;
+    await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
+  }
+  return state;
+}
+
+async function findUserByEmail(store, email) {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const state = await store.get('app-data', { type: 'json' });
+    const user = state?.users?.find((entry) => entry.email === email);
+    if (user) return user;
+    await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
+  }
+  return null;
+}
+
+async function loadReportsForUser(store, userId) {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const state = await store.get('app-data', { type: 'json' });
+    const reports = (state?.reports || [])
+      .filter((report) => String(report.user_id) === String(userId))
+      .map((report) => ({
+        ...report,
+        report_code: formatReportId(report.id),
+        area_name: getAreaById(report.area_id)?.name || 'Unknown',
+      }));
+    if (reports.length > 0 || attempt === 4) return reports;
+    await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
+  }
+  return [];
 }
 
 function formatReportId(id) {
@@ -403,8 +439,7 @@ exports.handler = async (event, context) => {
   if (path === '/api/login' && method === 'POST') {
     const body = JSON.parse(event.body || '{}');
     const email = (body.email || '').trim();
-    const loginState = await loadStateFresh(store);
-    const user = loginState.users.find((entry) => entry.email === email);
+    const user = await findUserByEmail(store, email);
     const valid = user && await bcrypt.compare(body.password || '', user.password);
     if (!valid) return json(401, { error: 'Invalid email or password.' });
     const cookie = sessionCookie({
@@ -433,7 +468,7 @@ exports.handler = async (event, context) => {
       role: 'citizen',
     };
     state.users = [...allUsers, nextUser];
-    await saveState(store, state);
+    await saveState(store, state, (saved) => saved.users.some((entry) => entry.email === email));
     const cookie = sessionCookie({
       user_id: Number(nextUser.id),
       user_name: nextUser.name,
@@ -473,7 +508,7 @@ exports.handler = async (event, context) => {
         changed_at: nextReport.created_at,
       },
     ];
-    await saveState(store, current);
+    await saveState(store, current, (saved) => saved.reports.some((entry) => entry.id === nextReport.id));
     return json(200, {
       success: true,
       report_id: formatReportId(nextReport.id),
@@ -511,14 +546,7 @@ exports.handler = async (event, context) => {
 
   if (path === '/api/my-reports' && method === 'GET') {
     if (!session?.user_id) return json(401, { error: 'Login required.' });
-    const freshState = await loadStateFresh(store);
-    const mine = freshState.reports
-      .filter((report) => String(report.user_id) === String(session.user_id))
-      .map((report) => ({
-        ...report,
-        report_code: formatReportId(report.id),
-        area_name: getAreaById(report.area_id)?.name || 'Unknown',
-      }));
+    const mine = await loadReportsForUser(store, session.user_id);
     return json(200, { reports: mine });
   }
 
