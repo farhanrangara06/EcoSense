@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Areas – Community Environmental Platform</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    
+</head>
+<body>
+    <nav class="navbar" id="mainNav">
+        <div class="nav-container">
+            <a href="/" class="nav-brand">
+                <span class="brand-icon">🌍</span> EcoSense
+            </a>
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">☰</button>
+            <ul class="nav-links" id="navLinks">
+                
+                <li><a href="/">🏠 Home</a></li>
+                <li><a href="/dashboard">🌍 Dashboard</a></li>
+                <li><a href="/cities">🇮🇳 Cities</a></li>
+                <li><a href="/trends">📊 Trends</a></li>
+                <li><a href="/report">🚨 Report</a></li>
+                
+                <li><a href="/login" class="nav-btn">🔐 Login</a></li>
+                
+                
+            </ul>
+        </div>
+    </nav>
+
+    
+    
+    
+
+    <main>
+<div class="page-header admin-header">
+    <div class="container"><h1>Manage Areas</h1><p>Add monitoring areas across India</p></div>
+</div>
+<div class="container page-content">
+    <div class="admin-form-card">
+        <h3>Add New Area</h3>
+        <form id="addAreaForm">
+            <div class="form-row">
+                <div class="form-group"><label>Area Name</label><input type="text" id="areaName" class="form-input" required></div>
+                <div class="form-group"><label>City</label><input type="text" id="areaCity" class="form-input" required></div>
+                <div class="form-group"><label>State</label><input type="text" id="areaState" class="form-input" value="Maharashtra"></div>
+            </div>
+            <div class="form-group"><label>Description</label><input type="text" id="areaDesc" class="form-input"></div>
+            <button type="submit" class="btn btn-primary">Add Area</button>
+        </form>
+    </div>
+    <div id="areasList"></div>
+</div>
+</main>
+
+    <footer class="footer">
+        <div class="container">
+            <p><strong>EcoSense</strong> – Know Your Environment. Understand the Change. Take Action.</p>
+            <p class="footer-sub">A research-based community solution for environmental awareness across India.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('navToggle')?.addEventListener('click', () => {
+            document.getElementById('navLinks').classList.toggle('open');
+        });
+    </script>
+    
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    async function loadAreas() {
+        const res = await fetch('/api/areas');
+        const data = await res.json();
+        let html = '<table class="data-table"><thead><tr><th>ID</th><th>Name</th><th>City</th><th>State</th><th>Description</th></tr></thead><tbody>';
+        data.areas.forEach(a => {
+            html += `<tr><td>${a.id}</td><td>${a.name}</td><td>${a.city}</td><td>${a.state||''}</td><td>${a.description||''}</td></tr>`;
+        });
+        html += '</tbody></table>';
+        document.getElementById('areasList').innerHTML = html;
+    }
+    document.getElementById('addAreaForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await fetch('/api/admin/areas', {method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({name: document.getElementById('areaName').value, city: document.getElementById('areaCity').value,
+                state: document.getElementById('areaState').value, description: document.getElementById('areaDesc').value})});
+        e.target.reset();
+        loadAreas();
+    });
+    loadAreas();
+});
+</script>
+
+</body>
+</html>

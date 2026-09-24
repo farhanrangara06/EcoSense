@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Details – Community Environmental Platform</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    
+</head>
+<body>
+    <nav class="navbar" id="mainNav">
+        <div class="nav-container">
+            <a href="/" class="nav-brand">
+                <span class="brand-icon">🌍</span> EcoSense
+            </a>
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">☰</button>
+            <ul class="nav-links" id="navLinks">
+                
+                <li><a href="/">🏠 Home</a></li>
+                <li><a href="/dashboard">🌍 Dashboard</a></li>
+                <li><a href="/cities">🇮🇳 Cities</a></li>
+                <li><a href="/trends">📊 Trends</a></li>
+                <li><a href="/report">🚨 Report</a></li>
+                
+                <li><a href="/login" class="nav-btn">🔐 Login</a></li>
+                
+                
+            </ul>
+        </div>
+    </nav>
+
+    
+    
+    
+
+    <main>
+<div class="page-header admin-header">
+    <div class="container">
+        <h1>Report Details</h1>
+        <a href="/admin/reports" class="btn btn-sm btn-outline">← Back to Reports</a>
+    </div>
+</div>
+
+<div class="container page-content">
+    <div id="reportDetail"></div>
+    <div id="envReadings" class="env-readings-admin"></div>
+    <div class="admin-actions-panel">
+        <h3>Update Status</h3>
+        <div class="form-group">
+            <label for="adminNote">Admin Note</label>
+            <textarea id="adminNote" class="form-textarea" rows="3" placeholder="Add a note about actions taken..."></textarea>
+        </div>
+        <div class="status-buttons">
+            <button id="markReviewed" class="btn btn-secondary">Mark Reviewed</button>
+            <button id="markResolved" class="btn btn-success">Mark Resolved</button>
+        </div>
+    </div>
+    <h3>Status History</h3>
+    <div id="statusHistory" class="status-timeline"></div>
+</div>
+</main>
+
+    <footer class="footer">
+        <div class="container">
+            <p><strong>EcoSense</strong> – Know Your Environment. Understand the Change. Take Action.</p>
+            <p class="footer-sub">A research-based community solution for environmental awareness across India.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('navToggle')?.addEventListener('click', () => {
+            document.getElementById('navLinks').classList.toggle('open');
+        });
+    </script>
+    
+<script>
+const pathMatch = window.location.pathname.match(/\/admin\/reports\/(\d+)/);
+const reportId = pathMatch ? parseInt(pathMatch[1], 10) : 1;
+document.addEventListener('DOMContentLoaded', async () => {
+    const res = await fetch(`/api/reports/${reportId}?_=${Date.now()}`, { credentials: 'same-origin', cache: 'no-store' });
+    const data = await res.json();
+    const r = data.report;
+
+    document.getElementById('reportDetail').innerHTML = `
+        <div class="detail-card">
+            <h2>${r.report_code}</h2>
+            <div class="detail-grid">
+                <div><strong>Area:</strong> ${r.area_name}</div>
+                <div><strong>Issue Type:</strong> ${r.issue_type}</div>
+                <div><strong>Submitted By:</strong> ${r.user_name}</div>
+                <div><strong>Date:</strong> ${new Date(r.created_at).toLocaleString('en-IN')}</div>
+                <div><strong>Status:</strong> <span class="status-badge status-${r.status.toLowerCase()}">${r.status}</span></div>
+            </div>
+            <div class="detail-desc"><strong>Description:</strong><p>${r.description}</p></div>
+            ${r.photo ? `<img src="${r.photo.startsWith('data:') ? r.photo : '/static/' + r.photo}" class="report-photo" alt="Report photo">` : ''}
+        </div>`;
+
+    // Load current environmental readings for the area
+    const envRes = await fetch(`/api/areas/${r.area_id}/latest`);
+    const envData = await envRes.json();
+    if (envData.reading) {
+        const rd = envData.reading;
+        document.getElementById('envReadings').innerHTML = `
+            <h3>Current Environmental Readings (${r.area_name})</h3>
+            <div class="mini-readings">
+                <span>AQI: <strong>${rd.aqi}</strong> ${rd.aqi_info.emoji} ${rd.aqi_info.label}</span>
+                <span>Temp: <strong>${rd.temperature}°C</strong></span>
+                <span>Humidity: <strong>${rd.humidity}%</strong></span>
+            </div>`;
+    }
+
+    // Status history timeline
+    let timeline = '';
+    data.history.forEach((h, i) => {
+        timeline += `<div class="timeline-item ${i < data.history.length-1 ? 'completed' : 'active'}">
+            <div class="timeline-dot"></div>
+            <div class="timeline-content"><strong>${h.status}</strong>
+            <span class="timeline-date">${new Date(h.changed_at).toLocaleString('en-IN')}</span>
+            ${h.admin_note ? `<p>${h.admin_note}</p>` : ''}</div></div>`;
+    });
+    document.getElementById('statusHistory').innerHTML = timeline;
+
+    async function updateStatus(status) {
+        const note = document.getElementById('adminNote').value || `Status changed to ${status}`;
+        await fetch(`/api/admin/reports/${reportId}`, {method:'PUT', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({status, admin_note: note})});
+        location.reload();
+    }
+    document.getElementById('markReviewed').addEventListener('click', () => updateStatus('Reviewed'));
+    document.getElementById('markResolved').addEventListener('click', () => updateStatus('Resolved'));
+});
+</script>
+
+</body>
+</html>

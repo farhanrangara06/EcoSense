@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Reports – Community Environmental Platform</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    
+</head>
+<body>
+    <nav class="navbar" id="mainNav">
+        <div class="nav-container">
+            <a href="/" class="nav-brand">
+                <span class="brand-icon">🌍</span> EcoSense
+            </a>
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">☰</button>
+            <ul class="nav-links" id="navLinks">
+                
+                <li><a href="/">🏠 Home</a></li>
+                <li><a href="/dashboard">🌍 Dashboard</a></li>
+                <li><a href="/cities">🇮🇳 Cities</a></li>
+                <li><a href="/trends">📊 Trends</a></li>
+                <li><a href="/report">🚨 Report</a></li>
+                
+                <li><a href="/login" class="nav-btn">🔐 Login</a></li>
+                
+                
+            </ul>
+        </div>
+    </nav>
+
+    
+    
+    
+
+    <main>
+<div class="page-header">
+    <div class="container">
+        <h1>My Reports</h1>
+        <p>Track the status of your submitted environmental concerns</p>
+    </div>
+</div>
+
+<div class="container page-content">
+    <div id="reportsList"></div>
+    <div id="reportDetail" class="report-detail" style="display:none;">
+        <button id="backToList" class="btn btn-sm btn-outline">← Back to list</button>
+        <div id="detailContent"></div>
+    </div>
+</div>
+</main>
+
+    <footer class="footer">
+        <div class="container">
+            <p><strong>EcoSense</strong> – Know Your Environment. Understand the Change. Take Action.</p>
+            <p class="footer-sub">A research-based community solution for environmental awareness across India.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('navToggle')?.addEventListener('click', () => {
+            document.getElementById('navLinks').classList.toggle('open');
+        });
+    </script>
+    
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    const listEl = document.getElementById('reportsList');
+    const detailEl = document.getElementById('reportDetail');
+    const detailContent = document.getElementById('detailContent');
+
+    async function loadReports() {
+        const res = await fetch(`/api/my-reports?_=${Date.now()}`, { credentials: 'same-origin', cache: 'no-store' });
+        const data = await res.json();
+        if (!data.reports || data.reports.length === 0) {
+            listEl.innerHTML = '<p class="empty-msg">No reports submitted yet. <a href="/report">Report a concern</a></p>';
+            return;
+        }
+        let html = '<div class="reports-table-wrap"><table class="data-table"><thead><tr><th>Report ID</th><th>Area</th><th>Issue</th><th>Date</th><th>Status</th><th></th></tr></thead><tbody>';
+        data.reports.forEach(r => {
+            const statusClass = r.status.toLowerCase();
+            const date = new Date(r.created_at).toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'});
+            html += `<tr><td><strong>${r.report_code}</strong></td><td>${r.area_name}</td><td>${r.issue_type}</td><td>${date}</td>
+                <td><span class="status-badge status-${statusClass}">${r.status}</span></td>
+                <td><button class="btn btn-sm btn-outline view-btn" data-id="${r.id}">View</button></td></tr>`;
+        });
+        html += '</tbody></table></div>';
+        listEl.innerHTML = html;
+        document.querySelectorAll('.view-btn').forEach(btn => {
+            btn.addEventListener('click', () => showDetail(btn.dataset.id));
+        });
+    }
+
+    async function showDetail(id) {
+        const res = await fetch(`/api/reports/${id}`, { credentials: 'same-origin', cache: 'no-store' });
+        const data = await res.json();
+        const r = data.report;
+        const history = data.history;
+        let timeline = '<div class="status-timeline">';
+        history.forEach((h, i) => {
+            timeline += `<div class="timeline-item ${i < history.length-1 ? 'completed' : 'active'}">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content"><strong>${h.status}</strong>
+                <span class="timeline-date">${new Date(h.changed_at).toLocaleString('en-IN')}</span>
+                ${h.admin_note ? `<p>${h.admin_note}</p>` : ''}</div></div>`;
+        });
+        timeline += '</div>';
+
+        detailContent.innerHTML = `
+            <h2>${r.report_code}</h2>
+            <div class="detail-grid">
+                <div><strong>Area:</strong> ${r.area_name}</div>
+                <div><strong>Issue:</strong> ${r.issue_type}</div>
+                <div><strong>Status:</strong> <span class="status-badge status-${r.status.toLowerCase()}">${r.status}</span></div>
+                <div><strong>Submitted:</strong> ${new Date(r.created_at).toLocaleString('en-IN')}</div>
+            </div>
+            <div class="detail-desc"><strong>Description:</strong><p>${r.description}</p></div>
+            ${r.photo ? `<img src="${r.photo.startsWith('data:') ? r.photo : '/static/' + r.photo}" class="report-photo" alt="Report photo">` : ''}
+            <h3>Status History</h3>${timeline}`;
+        listEl.style.display = 'none';
+        detailEl.style.display = 'block';
+    }
+
+    document.getElementById('backToList').addEventListener('click', () => {
+        detailEl.style.display = 'none';
+        listEl.style.display = 'block';
+    });
+
+    loadReports();
+});
+</script>
+
+</body>
+</html>

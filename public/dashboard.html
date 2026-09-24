@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard – Community Environmental Platform</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    
+</head>
+<body>
+    <nav class="navbar" id="mainNav">
+        <div class="nav-container">
+            <a href="/" class="nav-brand">
+                <span class="brand-icon">🌍</span> EcoSense
+            </a>
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">☰</button>
+            <ul class="nav-links" id="navLinks">
+                
+                <li><a href="/">🏠 Home</a></li>
+                <li><a href="/dashboard">🌍 Dashboard</a></li>
+                <li><a href="/cities">🇮🇳 Cities</a></li>
+                <li><a href="/trends">📊 Trends</a></li>
+                <li><a href="/report">🚨 Report</a></li>
+                
+                <li><a href="/login" class="nav-btn">🔐 Login</a></li>
+                
+                
+            </ul>
+        </div>
+    </nav>
+
+    
+    
+    
+
+    <main>
+<div class="page-header">
+    <div class="container">
+        <h1>Environmental Dashboard</h1>
+        <p>Real-time environmental data for your city</p>
+    </div>
+</div>
+
+<div class="container page-content">
+    <div class="area-selector-row">
+        <div class="area-selector">
+            <label for="stateFilter"><strong>State</strong></label>
+            <select id="stateFilter" class="form-select"><option value="">All States</option></select>
+        </div>
+        <div class="area-selector">
+            <label for="areaSelect"><strong>City</strong></label>
+            <select id="areaSelect" class="form-select"></select>
+        </div>
+        <div class="area-selector">
+            <label for="citySearch"><strong>Search</strong></label>
+            <input type="text" id="citySearch" class="form-input" placeholder="Search city...">
+        </div>
+    </div>
+
+    <details class="demo-panel-collapsed">
+        <summary>🎬 Demo Mode (CEP Presentation)</summary>
+        <p class="demo-note">Override with demo scenarios for presentations only.</p>
+        <div class="demo-buttons" id="demoButtons"></div>
+        <button id="demoOff" class="btn btn-sm btn-outline">Exit Demo Mode</button>
+    </details>
+
+    <div id="loadingMsg" class="loading-msg">Fetching live environmental data...</div>
+    <div id="errorMsg" class="error-msg" style="display:none;"></div>
+
+    <div id="dashboardContent" class="dashboard-wrapper" style="display:none;">
+        <div id="demoBanner" class="demo-banner" style="display:none;"></div>
+        <div id="staleWarning" class="stale-warning" style="display:none;"></div>
+
+        <div class="dashboard-meta-row">
+            <div id="areaInfo" class="area-info-label"></div>
+            <div id="liveSourceBadge" class="live-source-badge" style="display:none;"></div>
+        </div>
+
+        <div class="readings-grid" id="readingsGrid"></div>
+
+        <div class="dashboard-actions">
+            <a href="/trends" class="btn btn-primary">📊 View Trends</a>
+            <a href="/cities" class="btn btn-secondary">🇮🇳 All Cities</a>
+            <a href="/report" class="btn btn-secondary">🚨 Report a Concern</a>
+        </div>
+    </div>
+</div>
+</main>
+
+    <footer class="footer">
+        <div class="container">
+            <p><strong>EcoSense</strong> – Know Your Environment. Understand the Change. Take Action.</p>
+            <p class="footer-sub">A research-based community solution for environmental awareness across India.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('navToggle')?.addEventListener('click', () => {
+            document.getElementById('navLinks').classList.toggle('open');
+        });
+    </script>
+    
+<script src="/static/js/dashboard.js"></script>
+
+</body>
+</html>

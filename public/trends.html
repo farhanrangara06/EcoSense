@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Environmental Trends – Community Environmental Platform</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    
+</head>
+<body>
+    <nav class="navbar" id="mainNav">
+        <div class="nav-container">
+            <a href="/" class="nav-brand">
+                <span class="brand-icon">🌍</span> EcoSense
+            </a>
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">☰</button>
+            <ul class="nav-links" id="navLinks">
+                
+                <li><a href="/">🏠 Home</a></li>
+                <li><a href="/dashboard">🌍 Dashboard</a></li>
+                <li><a href="/cities">🇮🇳 Cities</a></li>
+                <li><a href="/trends">📊 Trends</a></li>
+                <li><a href="/report">🚨 Report</a></li>
+                
+                <li><a href="/login" class="nav-btn">🔐 Login</a></li>
+                
+                
+            </ul>
+        </div>
+    </nav>
+
+    
+    
+    
+
+    <main>
+<div class="page-header">
+    <div class="container">
+        <h1>Environmental Trends</h1>
+        <p>See how conditions are changing over time</p>
+    </div>
+</div>
+
+<div class="container page-content">
+    <div class="trend-controls">
+        <div class="control-group">
+            <label for="trendArea">Area</label>
+            <select id="trendArea" class="form-select"></select>
+        </div>
+        <div class="control-group">
+            <label for="trendParam">Parameter</label>
+            <select id="trendParam" class="form-select">
+                <option value="aqi">AQI (Air Quality)</option>
+                <option value="temperature">Temperature</option>
+                <option value="humidity">Humidity</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <label>Time Period</label>
+            <div class="period-buttons">
+                <button class="period-btn active" data-period="24h">24 Hours</button>
+                <button class="period-btn" data-period="7d">7 Days</button>
+                <button class="period-btn" data-period="30d">30 Days</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="chart-container">
+        <canvas id="trendChart"></canvas>
+    </div>
+
+    <div id="trendAnalysis" class="trend-analysis" style="display:none;">
+        <h3>Trend Analysis</h3>
+        <div id="trendResult"></div>
+        <p class="trend-disclaimer"><em>Note: This is a simple trend comparison, not a scientific prediction.</em></p>
+    </div>
+</div>
+</main>
+
+    <footer class="footer">
+        <div class="container">
+            <p><strong>EcoSense</strong> – Know Your Environment. Understand the Change. Take Action.</p>
+            <p class="footer-sub">A research-based community solution for environmental awareness across India.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('navToggle')?.addEventListener('click', () => {
+            document.getElementById('navLinks').classList.toggle('open');
+        });
+    </script>
+    
+<script src="/static/js/trends.js"></script>
+
+</body>
+</html>

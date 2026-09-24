@@ -34,6 +34,9 @@ def build_areas_data():
     payload = {'areas': areas, 'states': states, 'total': len(areas)}
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     (DATA_DIR / 'areas.json').write_text(json.dumps(payload), encoding='utf-8')
+    lib_data = ROOT / 'lib' / 'data'
+    lib_data.mkdir(parents=True, exist_ok=True)
+    (lib_data / 'areas.json').write_text(json.dumps(payload), encoding='utf-8')
     return payload
 
 

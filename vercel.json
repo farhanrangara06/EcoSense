@@ -1,0 +1,39 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": { "distDir": "public" }
+    },
+    {
+      "src": "api/handler.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/handler.js" },
+    { "src": "/dashboard", "dest": "/dashboard.html" },
+    { "src": "/trends", "dest": "/trends.html" },
+    { "src": "/cities", "dest": "/cities.html" },
+    { "src": "/login", "dest": "/login.html" },
+    { "src": "/register", "dest": "/register.html" },
+    { "src": "/logout", "dest": "/logout.html" },
+    { "src": "/report", "dest": "/report.html" },
+    { "src": "/my-reports", "dest": "/my-reports.html" },
+    { "src": "/admin", "dest": "/admin.html" },
+    { "src": "/admin/reports", "dest": "/admin/reports.html" },
+    { "src": "/admin/areas", "dest": "/admin/areas.html" },
+    { "src": "/admin/readings", "dest": "/admin/readings.html" },
+    { "src": "/admin/reports/(.*)", "dest": "/admin/report-details.html" },
+    { "src": "/(.*)", "dest": "/public/$1" }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate, private" }
+      ]
+    }
+  ]
+}

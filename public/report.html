@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report a Concern – Community Environmental Platform</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    
+</head>
+<body>
+    <nav class="navbar" id="mainNav">
+        <div class="nav-container">
+            <a href="/" class="nav-brand">
+                <span class="brand-icon">🌍</span> EcoSense
+            </a>
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">☰</button>
+            <ul class="nav-links" id="navLinks">
+                
+                <li><a href="/">🏠 Home</a></li>
+                <li><a href="/dashboard">🌍 Dashboard</a></li>
+                <li><a href="/cities">🇮🇳 Cities</a></li>
+                <li><a href="/trends">📊 Trends</a></li>
+                <li><a href="/report">🚨 Report</a></li>
+                
+                <li><a href="/login" class="nav-btn">🔐 Login</a></li>
+                
+                
+            </ul>
+        </div>
+    </nav>
+
+    
+    
+    
+
+    <main>
+<div class="page-header">
+    <div class="container">
+        <h1>🚨 Report a Concern</h1>
+        <p>Help your community by reporting environmental problems</p>
+    </div>
+</div>
+
+<div class="container page-content">
+    <form id="reportForm" class="report-form" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="reportArea">Area *</label>
+            <select id="reportArea" name="area_id" class="form-select" required></select>
+        </div>
+        <div class="form-group">
+            <label for="issueType">Issue Type *</label>
+            <select id="issueType" name="issue_type" class="form-select" required>
+                <option value="">Select issue type</option>
+                <option value="Smoke">Smoke</option>
+                <option value="Bad Smell">Bad Smell</option>
+                <option value="Garbage">Garbage</option>
+                <option value="Dirty Water">Dirty Water</option>
+                <option value="Excessive Noise">Excessive Noise</option>
+                <option value="Air Pollution">Air Pollution</option>
+                <option value="Water Pollution">Water Pollution</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="description">Description *</label>
+            <textarea id="description" name="description" class="form-textarea" rows="5"
+                placeholder="Describe the environmental concern. E.g., 'I noticed a strong burning smell near the main road.'" required></textarea>
+        </div>
+        <div class="form-group">
+            <label for="photo">Photo (optional)</label>
+            <input type="file" id="photo" name="photo" accept="image/*" class="form-input">
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg">Submit Concern</button>
+    </form>
+    <div id="reportSuccess" class="success-box" style="display:none;"></div>
+</div>
+</main>
+
+    <footer class="footer">
+        <div class="container">
+            <p><strong>EcoSense</strong> – Know Your Environment. Understand the Change. Take Action.</p>
+            <p class="footer-sub">A research-based community solution for environmental awareness across India.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('navToggle')?.addEventListener('click', () => {
+            document.getElementById('navLinks').classList.toggle('open');
+        });
+    </script>
+    
+<script src="/static/js/reports.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard – Community Environmental Platform</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    
+</head>
+<body>
+    <nav class="navbar" id="mainNav">
+        <div class="nav-container">
+            <a href="/" class="nav-brand">
+                <span class="brand-icon">🌍</span> EcoSense
+            </a>
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">☰</button>
+            <ul class="nav-links" id="navLinks">
+                
+                <li><a href="/">🏠 Home</a></li>
+                <li><a href="/dashboard">🌍 Dashboard</a></li>
+                <li><a href="/cities">🇮🇳 Cities</a></li>
+                <li><a href="/trends">📊 Trends</a></li>
+                <li><a href="/report">🚨 Report</a></li>
+                
+                <li><a href="/login" class="nav-btn">🔐 Login</a></li>
+                
+                
+            </ul>
+        </div>
+    </nav>
+
+    
+    
+    
+
+    <main>
+<div class="page-header admin-header">
+    <div class="container">
+        <h1>Admin Dashboard</h1>
+        <p>Manage environmental reports and data</p>
+    </div>
+</div>
+
+<div class="container page-content">
+    <div id="statsCards" class="stats-grid"></div>
+    <div class="admin-quick-links">
+        <a href="/admin/reports" class="btn btn-primary">View All Reports</a>
+        <a href="/admin/areas" class="btn btn-secondary">Manage Areas</a>
+        <a href="/admin/readings" class="btn btn-secondary">Add Readings</a>
+        <a href="/dashboard" class="btn btn-outline">View Public Dashboard</a>
+    </div>
+    <h2>Recent Pending Reports</h2>
+    <div id="recentReports"></div>
+</div>
+</main>
+
+    <footer class="footer">
+        <div class="container">
+            <p><strong>EcoSense</strong> – Know Your Environment. Understand the Change. Take Action.</p>
+            <p class="footer-sub">A research-based community solution for environmental awareness across India.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('navToggle')?.addEventListener('click', () => {
+            document.getElementById('navLinks').classList.toggle('open');
+        });
+    </script>
+    
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    const res = await fetch(`/api/admin/reports?_=${Date.now()}`, { credentials: 'same-origin', cache: 'no-store' });
+    const data = await res.json();
+    const s = data.stats;
+    document.getElementById('statsCards').innerHTML = `
+        <div class="stat-card"><div class="stat-number">${s.total}</div><div class="stat-label">Total Reports</div></div>
+        <div class="stat-card stat-pending"><div class="stat-number">${s.pending||0}</div><div class="stat-label">Pending</div></div>
+        <div class="stat-card stat-reviewed"><div class="stat-number">${s.reviewed||0}</div><div class="stat-label">Reviewed</div></div>
+        <div class="stat-card stat-resolved"><div class="stat-number">${s.resolved||0}</div><div class="stat-label">Resolved</div></div>`;
+
+    const pending = data.reports.filter(r => r.status === 'Pending').slice(0, 5);
+    if (pending.length === 0) {
+        document.getElementById('recentReports').innerHTML = '<p class="empty-msg">No pending reports.</p>';
+    } else {
+        let html = '<table class="data-table"><thead><tr><th>ID</th><th>Area</th><th>Issue</th><th>Date</th><th>Action</th></tr></thead><tbody>';
+        pending.forEach(r => {
+            html += `<tr><td>${r.report_code}</td><td>${r.area_name}</td><td>${r.issue_type}</td>
+                <td>${new Date(r.created_at).toLocaleDateString('en-IN')}</td>
+                <td><a href="/admin/reports/${r.id}" class="btn btn-sm btn-primary">View</a></td></tr>`;
+        });
+        html += '</tbody></table>';
+        document.getElementById('recentReports').innerHTML = html;
+    }
+});
+</script>
+
+</body>
+</html>

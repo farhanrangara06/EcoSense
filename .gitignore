@@ -9,7 +9,9 @@ static/uploads/reports/*
 !static/uploads/reports/.gitkeep
 .DS_Store
 .netlify/
+.vercel/
 node_modules/
 package-lock.json
-public/
 *.zip
+
+.vercel

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home – Community Environmental Platform</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    
+</head>
+<body>
+    <nav class="navbar" id="mainNav">
+        <div class="nav-container">
+            <a href="/" class="nav-brand">
+                <span class="brand-icon">🌍</span> EcoSense
+            </a>
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">☰</button>
+            <ul class="nav-links" id="navLinks">
+                
+                <li><a href="/">🏠 Home</a></li>
+                <li><a href="/dashboard">🌍 Dashboard</a></li>
+                <li><a href="/cities">🇮🇳 Cities</a></li>
+                <li><a href="/trends">📊 Trends</a></li>
+                <li><a href="/report">🚨 Report</a></li>
+                
+                <li><a href="/login" class="nav-btn">🔐 Login</a></li>
+                
+                
+            </ul>
+        </div>
+    </nav>
+
+    
+    
+    
+
+    <main>
+<section class="hero">
+    <div class="container hero-content">
+        <h1>EcoSense</h1>
+        <p class="tagline">Know Your Environment. Understand the Change. Take Action.</p>
+        <p class="hero-text">Environmental information should not be difficult to understand. EcoSense helps communities across India see what's happening in their area, understand environmental risks, track changes over time, and report concerns to the people responsible for taking action.</p>
+        <div class="hero-buttons">
+            <a href="/cities" class="btn btn-primary">🇮🇳 Live Cities Across India</a>
+            <a href="/dashboard" class="btn btn-secondary">Check My City</a>
+            <a href="/report" class="btn btn-secondary">Report a Concern</a>
+        </div>
+    </div>
+</section>
+
+<section class="section" id="story">
+    <div class="container">
+        <div class="story-banner">
+            <p>"Communities need a simple way to understand current environmental conditions and report concerns with accountability. <strong>EcoSense was designed to close that gap.</strong>"</p>
+        </div>
+    </div>
+</section>
+
+<section class="section section-alt" id="problem">
+    <div class="container">
+        <h2 class="section-title">The Community Problem</h2>
+        <p class="section-subtitle">Residents across Indian cities often ask:</p>
+        <div class="problem-grid">
+            <div class="problem-card">"Is my area polluted <strong>right now</strong>?"</div>
+            <div class="problem-card">"Is it getting <strong>better or worse</strong>?"</div>
+            <div class="problem-card">"Where do I <strong>report</strong> an environmental problem?"</div>
+            <div class="problem-card">"Did anyone actually <strong>act on my complaint</strong>?"</div>
+        </div>
+    </div>
+</section>
+
+<section class="section" id="solution">
+    <div class="container">
+        <h2 class="section-title">Our Solution</h2>
+        <p class="section-subtitle">EcoSense closes the complete loop:</p>
+        <div class="solution-flow">
+            <div class="flow-step"><span class="flow-icon">👁️</span><h3>Awareness</h3><p>See current environmental conditions in your area.</p></div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-step"><span class="flow-icon">💡</span><h3>Understanding</h3><p>Turn numbers into simple, plain-language information.</p></div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-step"><span class="flow-icon">📈</span><h3>Trend</h3><p>See how conditions change over time.</p></div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-step"><span class="flow-icon">🚨</span><h3>Action</h3><p>Report environmental concerns easily.</p></div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-step"><span class="flow-icon">✅</span><h3>Accountability</h3><p>Track whether your concern is reviewed or resolved.</p></div>
+        </div>
+    </div>
+</section>
+
+<section class="section section-alt">
+    <div class="container">
+        <h2 class="section-title">How It Works</h2>
+        <div class="features-grid">
+            <div class="feature-card"><h3>🌬️ Live Air Quality</h3><p>Real-time AQI readings with severity levels and health guidance.</p></div>
+            <div class="feature-card"><h3>🌡️ Temperature & Humidity</h3><p>Complete environmental picture for your neighbourhood.</p></div>
+            <div class="feature-card"><h3>📊 Trend Analysis</h3><p>Charts showing 24h, 7-day, and 30-day environmental trends.</p></div>
+            <div class="feature-card"><h3>🚨 Concern Reporting</h3><p>Report smoke, garbage, pollution, and more with photo upload.</p></div>
+            <div class="feature-card"><h3>📋 Status Tracking</h3><p>Pending → Reviewed → Resolved workflow with admin notes.</p></div>
+            <div class="feature-card"><h3>🇮🇳 Pan-India Coverage</h3><p>Live environmental data for 80+ cities across every state and union territory in India.</p></div>
+        </div>
+    </div>
+</section>
+
+<section class="section cta-section">
+    <div class="container text-center">
+        <h2>Ready to check your area?</h2>
+        <a href="/dashboard" class="btn btn-primary btn-lg">Check My Area Now</a>
+    </div>
+</section>
+</main>
+
+    <footer class="footer">
+        <div class="container">
+            <p><strong>EcoSense</strong> – Know Your Environment. Understand the Change. Take Action.</p>
+            <p class="footer-sub">A research-based community solution for environmental awareness across India.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('navToggle')?.addEventListener('click', () => {
+            document.getElementById('navLinks').classList.toggle('open');
+        });
+    </script>
+    
+</body>
+</html>
