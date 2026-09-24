@@ -441,7 +441,7 @@ exports.handler = async (event, context) => {
     const reportId = Number(reportDetailMatch[1]);
     const report = reports.find((entry) => entry.id === reportId);
     if (!report) return json(404, { error: 'Report not found' });
-    if (session.role !== 'admin' && report.user_id !== session.user_id) {
+    if (session.role !== 'admin' && String(report.user_id) !== String(session.user_id)) {
       return json(403, { error: 'Access denied' });
     }
     const user = allUsers.find((entry) => entry.id === report.user_id);
@@ -465,7 +465,7 @@ exports.handler = async (event, context) => {
   if (path === '/api/my-reports' && method === 'GET') {
     if (!session?.user_id) return json(401, { error: 'Login required.' });
     const mine = reports
-      .filter((report) => report.user_id === session.user_id)
+      .filter((report) => String(report.user_id) === String(session.user_id))
       .map((report) => ({
         ...report,
         report_code: formatReportId(report.id),
