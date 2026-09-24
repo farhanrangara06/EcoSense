@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Report Details{% endblock %}
+{% block content %}
+<div class="page-header admin-header">
+    <div class="container">
+        <h1>Report Details</h1>
+        <a href="{{ url_for('admin_reports_page') }}" class="btn btn-sm btn-outline">← Back to Reports</a>
+    </div>
+</div>
+
+<div class="container page-content">
+    <div id="reportDetail"></div>
+    <div id="envReadings" class="env-readings-admin"></div>
+    <div class="admin-actions-panel">
+        <h3>Update Status</h3>
+        <div class="form-group">
+            <label for="adminNote">Admin Note</label>
+            <textarea id="adminNote" class="form-textarea" rows="3" placeholder="Add a note about actions taken..."></textarea>
+        </div>
+        <div class="status-buttons">
+            <button id="markReviewed" class="btn btn-secondary">Mark Reviewed</button>
+            <button id="markResolved" class="btn btn-success">Mark Resolved</button>
+        </div>
+    </div>
+    <h3>Status History</h3>
+    <div id="statusHistory" class="status-timeline"></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const reportId = {{ report_id }};
+document.addEventListener('DOMContentLoaded', async () => {
+    const res = await fetch(`/api/reports/${reportId}`);
+    const data = await res.json();
+    const r = data.report;
+
+    document.getElementById('reportDetail').innerHTML = `
+        <div class="detail-card">
+            <h2>${r.report_code}</h2>
+            <div class="detail-grid">
+                <div><strong>Area:</strong> ${r.area_name}</div>
+                <div><strong>Issue Type:</strong> ${r.issue_type}</div>
+                <div><strong>Submitted By:</strong> ${r.user_name}</div>
+                <div><strong>Date:</strong> ${new Date(r.created_at).toLocaleString('en-IN')}</div>
+                <div><strong>Status:</strong> <span class="status-badge status-${r.status.toLowerCase()}">${r.status}</span></div>
+            </div>
+            <div class="detail-desc"><strong>Description:</strong><p>${r.description}</p></div>
+            ${r.photo ? `<img src="/static/${r.photo}" class="report-photo" alt="Report photo">` : ''}
+        </div>`;
+
+    // Load current environmental readings for the area
+    const envRes = await fetch(`/api/areas/${r.area_id}/latest`);
+    const envData = await envRes.json();
+    if (envData.reading) {
+        const rd = envData.reading;
+        document.getElementById('envReadings').innerHTML = `
+            <h3>Current Environmental Readings (${r.area_name})</h3>
+            <div class="mini-readings">
+                <span>AQI: <strong>${rd.aqi}</strong> ${rd.aqi_info.emoji} ${rd.aqi_info.label}</span>
+                <span>Temp: <strong>${rd.temperature}°C</strong></span>
+                <span>Humidity: <strong>${rd.humidity}%</strong></span>
+            </div>`;
+    }
+
+    // Status history timeline
+    let timeline = '';
+    data.history.forEach((h, i) => {
+        timeline += `<div class="timeline-item ${i < data.history.length-1 ? 'completed' : 'active'}">
+            <div class="timeline-dot"></div>
+            <div class="timeline-content"><strong>${h.status}</strong>
+            <span class="timeline-date">${new Date(h.changed_at).toLocaleString('en-IN')}</span>
+            ${h.admin_note ? `<p>${h.admin_note}</p>` : ''}</div></div>`;
+    });
+    document.getElementById('statusHistory').innerHTML = timeline;
+
+    async function updateStatus(status) {
+        const note = document.getElementById('adminNote').value || `Status changed to ${status}`;
+        await fetch(`/api/admin/reports/${reportId}`, {method:'PUT', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({status, admin_note: note})});
+        location.reload();
+    }
+    document.getElementById('markReviewed').addEventListener('click', () => updateStatus('Reviewed'));
+    document.getElementById('markResolved').addEventListener('click', () => updateStatus('Resolved'));
+});
+</script>
+{% endblock %}

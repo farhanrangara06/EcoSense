@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Environmental Data{% endblock %}
+{% block content %}
+<div class="page-header admin-header">
+    <div class="container"><h1>Environmental Data</h1><p>Add or update environmental readings</p></div>
+</div>
+<div class="container page-content">
+    <div class="admin-form-card">
+        <h3>Add Reading</h3>
+        <form id="addReadingForm">
+            <div class="form-row">
+                <div class="form-group"><label>Area</label><select id="readingArea" class="form-select" required></select></div>
+                <div class="form-group"><label>AQI</label><input type="number" id="readingAqi" class="form-input" required min="0" max="500"></div>
+                <div class="form-group"><label>Temperature (°C)</label><input type="number" id="readingTemp" class="form-input" required step="0.1"></div>
+                <div class="form-group"><label>Humidity (%)</label><input type="number" id="readingHumidity" class="form-input" required min="0" max="100" step="0.1"></div>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Reading</button>
+        </form>
+    </div>
+    <p class="info-note">💡 Tip: Run <code>python data_collector.py --loop</code> to automatically generate readings every 5 minutes.</p>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    const res = await fetch('/api/areas');
+    const data = await res.json();
+    const sel = document.getElementById('readingArea');
+    data.areas.forEach(a => { sel.innerHTML += `<option value="${a.id}">${a.name}, ${a.city}</option>`; });
+
+    document.getElementById('addReadingForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const body = {area_id: sel.value, aqi: document.getElementById('readingAqi').value,
+            temperature: document.getElementById('readingTemp').value, humidity: document.getElementById('readingHumidity').value};
+        const r = await fetch('/api/admin/readings', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+        const d = await r.json();
+        if (d.success) { alert('Reading added successfully!'); e.target.reset(); }
+    });
+});
+</script>
+{% endblock %}

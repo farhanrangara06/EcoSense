@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Report a Concern{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1>🚨 Report a Concern</h1>
+        <p>Help your community by reporting environmental problems</p>
+    </div>
+</div>
+
+<div class="container page-content">
+    <form id="reportForm" class="report-form" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="reportArea">Area *</label>
+            <select id="reportArea" name="area_id" class="form-select" required></select>
+        </div>
+        <div class="form-group">
+            <label for="issueType">Issue Type *</label>
+            <select id="issueType" name="issue_type" class="form-select" required>
+                <option value="">Select issue type</option>
+                <option value="Smoke">Smoke</option>
+                <option value="Bad Smell">Bad Smell</option>
+                <option value="Garbage">Garbage</option>
+                <option value="Dirty Water">Dirty Water</option>
+                <option value="Excessive Noise">Excessive Noise</option>
+                <option value="Air Pollution">Air Pollution</option>
+                <option value="Water Pollution">Water Pollution</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="description">Description *</label>
+            <textarea id="description" name="description" class="form-textarea" rows="5"
+                placeholder="Describe the environmental concern. E.g., 'I noticed a strong burning smell near the main road.'" required></textarea>
+        </div>
+        <div class="form-group">
+            <label for="photo">Photo (optional)</label>
+            <input type="file" id="photo" name="photo" accept="image/*" class="form-input">
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg">Submit Concern</button>
+    </form>
+    <div id="reportSuccess" class="success-box" style="display:none;"></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/reports.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1>Environmental Dashboard</h1>
+        <p>Real-time environmental data for your city</p>
+    </div>
+</div>
+
+<div class="container page-content">
+    <div class="area-selector-row">
+        <div class="area-selector">
+            <label for="stateFilter"><strong>State</strong></label>
+            <select id="stateFilter" class="form-select"><option value="">All States</option></select>
+        </div>
+        <div class="area-selector">
+            <label for="areaSelect"><strong>City</strong></label>
+            <select id="areaSelect" class="form-select"></select>
+        </div>
+        <div class="area-selector">
+            <label for="citySearch"><strong>Search</strong></label>
+            <input type="text" id="citySearch" class="form-input" placeholder="Search city...">
+        </div>
+    </div>
+
+    <details class="demo-panel-collapsed">
+        <summary>🎬 Demo Mode (CEP Presentation)</summary>
+        <p class="demo-note">Override with demo scenarios for presentations only.</p>
+        <div class="demo-buttons" id="demoButtons"></div>
+        <button id="demoOff" class="btn btn-sm btn-outline">Exit Demo Mode</button>
+    </details>
+
+    <div id="loadingMsg" class="loading-msg">Fetching live environmental data...</div>
+    <div id="errorMsg" class="error-msg" style="display:none;"></div>
+
+    <div id="dashboardContent" class="dashboard-wrapper" style="display:none;">
+        <div id="demoBanner" class="demo-banner" style="display:none;"></div>
+        <div id="staleWarning" class="stale-warning" style="display:none;"></div>
+
+        <div class="dashboard-meta-row">
+            <div id="areaInfo" class="area-info-label"></div>
+            <div id="liveSourceBadge" class="live-source-badge" style="display:none;"></div>
+        </div>
+
+        <div class="readings-grid" id="readingsGrid"></div>
+
+        <div class="dashboard-actions">
+            <a href="{{ url_for('trends') }}" class="btn btn-primary">📊 View Trends</a>
+            <a href="{{ url_for('cities_page') }}" class="btn btn-secondary">🇮🇳 All Cities</a>
+            <a href="{{ url_for('report_page') }}" class="btn btn-secondary">🚨 Report a Concern</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

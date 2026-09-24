@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Admin Reports{% endblock %}
+{% block content %}
+<div class="page-header admin-header">
+    <div class="container">
+        <h1>Concern Reports</h1>
+        <p>Review and manage citizen environmental reports</p>
+    </div>
+</div>
+
+<div class="container page-content">
+    <div class="filter-bar">
+        <button class="filter-btn active" data-status="">All</button>
+        <button class="filter-btn" data-status="Pending">Pending</button>
+        <button class="filter-btn" data-status="Reviewed">Reviewed</button>
+        <button class="filter-btn" data-status="Resolved">Resolved</button>
+    </div>
+    <div id="reportsTable"></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    let currentFilter = '';
+    async function loadReports(status) {
+        const url = status ? `/api/admin/reports?status=${status}` : '/api/admin/reports';
+        const res = await fetch(url);
+        const data = await res.json();
+        let html = '<table class="data-table"><thead><tr><th>Report ID</th><th>Area</th><th>Issue</th><th>Description</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+        data.reports.forEach(r => {
+            const desc = r.description.length > 50 ? r.description.substring(0,50)+'...' : r.description;
+            html += `<tr><td><strong>${r.report_code}</strong></td><td>${r.area_name}</td><td>${r.issue_type}</td>
+                <td>${desc}</td><td>${new Date(r.created_at).toLocaleDateString('en-IN')}</td>
+                <td><span class="status-badge status-${r.status.toLowerCase()}">${r.status}</span></td>
+                <td class="action-btns">
+                    <a href="/admin/reports/${r.id}" class="btn btn-sm btn-primary">View</a>
+                    ${r.status==='Pending'?`<button class="btn btn-sm btn-secondary quick-review" data-id="${r.id}">Review</button>`:''}
+                    ${r.status!=='Resolved'?`<button class="btn btn-sm btn-success quick-resolve" data-id="${r.id}">Resolve</button>`:''}
+                </td></tr>`;
+        });
+        html += '</tbody></table>';
+        document.getElementById('reportsTable').innerHTML = html;
+
+        document.querySelectorAll('.quick-review').forEach(b => b.addEventListener('click', () => updateStatus(b.dataset.id, 'Reviewed')));
+        document.querySelectorAll('.quick-resolve').forEach(b => b.addEventListener('click', () => updateStatus(b.dataset.id, 'Resolved')));
+    }
+    async function updateStatus(id, status) {
+        await fetch(`/api/admin/reports/${id}`, {method:'PUT', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({status, admin_note: `Marked as ${status} by admin`})});
+        loadReports(currentFilter);
+    }
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentFilter = btn.dataset.status;
+            loadReports(currentFilter);
+        });
+    });
+    loadReports('');
+});
+</script>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Live Cities Across India{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1>🇮🇳 Live Environmental Data — India</h1>
+        <p>Real-time air quality and weather for <span id="cityCount">...</span> cities across India</p>
+    </div>
+</div>
+
+<div class="container page-content">
+    <div class="cities-toolbar">
+        <input type="text" id="citySearch" class="form-input" placeholder="Search city or state...">
+        <select id="stateFilter" class="form-select">
+            <option value="">All States</option>
+        </select>
+        <button id="refreshCities" class="btn btn-primary btn-sm">↻ Refresh Live Data</button>
+    </div>
+
+    <div class="cities-stats" id="citiesStats"></div>
+    <div id="citiesLoading" class="loading-msg">Loading live data for Indian cities...</div>
+    <div id="citiesGrid" class="cities-grid"></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/cities.js') }}"></script>
+{% endblock %}

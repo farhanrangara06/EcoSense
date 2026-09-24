@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}My Reports{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1>My Reports</h1>
+        <p>Track the status of your submitted environmental concerns</p>
+    </div>
+</div>
+
+<div class="container page-content">
+    <div id="reportsList"></div>
+    <div id="reportDetail" class="report-detail" style="display:none;">
+        <button id="backToList" class="btn btn-sm btn-outline">← Back to list</button>
+        <div id="detailContent"></div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    const listEl = document.getElementById('reportsList');
+    const detailEl = document.getElementById('reportDetail');
+    const detailContent = document.getElementById('detailContent');
+
+    async function loadReports() {
+        const res = await fetch('/api/my-reports');
+        const data = await res.json();
+        if (!data.reports || data.reports.length === 0) {
+            listEl.innerHTML = '<p class="empty-msg">No reports submitted yet. <a href="/report">Report a concern</a></p>';
+            return;
+        }
+        let html = '<div class="reports-table-wrap"><table class="data-table"><thead><tr><th>Report ID</th><th>Area</th><th>Issue</th><th>Date</th><th>Status</th><th></th></tr></thead><tbody>';
+        data.reports.forEach(r => {
+            const statusClass = r.status.toLowerCase();
+            const date = new Date(r.created_at).toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'});
+            html += `<tr><td><strong>${r.report_code}</strong></td><td>${r.area_name}</td><td>${r.issue_type}</td><td>${date}</td>
+                <td><span class="status-badge status-${statusClass}">${r.status}</span></td>
+                <td><button class="btn btn-sm btn-outline view-btn" data-id="${r.id}">View</button></td></tr>`;
+        });
+        html += '</tbody></table></div>';
+        listEl.innerHTML = html;
+        document.querySelectorAll('.view-btn').forEach(btn => {
+            btn.addEventListener('click', () => showDetail(btn.dataset.id));
+        });
+    }
+
+    async function showDetail(id) {
+        const res = await fetch(`/api/reports/${id}`);
+        const data = await res.json();
+        const r = data.report;
+        const history = data.history;
+        let timeline = '<div class="status-timeline">';
+        history.forEach((h, i) => {
+            timeline += `<div class="timeline-item ${i < history.length-1 ? 'completed' : 'active'}">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content"><strong>${h.status}</strong>
+                <span class="timeline-date">${new Date(h.changed_at).toLocaleString('en-IN')}</span>
+                ${h.admin_note ? `<p>${h.admin_note}</p>` : ''}</div></div>`;
+        });
+        timeline += '</div>';
+
+        detailContent.innerHTML = `
+            <h2>${r.report_code}</h2>
+            <div class="detail-grid">
+                <div><strong>Area:</strong> ${r.area_name}</div>
+                <div><strong>Issue:</strong> ${r.issue_type}</div>
+                <div><strong>Status:</strong> <span class="status-badge status-${r.status.toLowerCase()}">${r.status}</span></div>
+                <div><strong>Submitted:</strong> ${new Date(r.created_at).toLocaleString('en-IN')}</div>
+            </div>
+            <div class="detail-desc"><strong>Description:</strong><p>${r.description}</p></div>
+            ${r.photo ? `<img src="/static/${r.photo}" class="report-photo" alt="Report photo">` : ''}
+            <h3>Status History</h3>${timeline}`;
+        listEl.style.display = 'none';
+        detailEl.style.display = 'block';
+    }
+
+    document.getElementById('backToList').addEventListener('click', () => {
+        detailEl.style.display = 'none';
+        listEl.style.display = 'block';
+    });
+
+    loadReports();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}EcoSense{% endblock %} – Community Environmental Platform</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar" id="mainNav">
+        <div class="nav-container">
+            <a href="{{ url_for('index') }}" class="nav-brand">
+                <span class="brand-icon">🌍</span> EcoSense
+            </a>
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">☰</button>
+            <ul class="nav-links" id="navLinks">
+                {% if session.get('role') == 'admin' %}
+                <li><a href="{{ url_for('admin_dashboard') }}">Dashboard</a></li>
+                <li><a href="{{ url_for('admin_reports_page') }}">Reports</a></li>
+                <li><a href="{{ url_for('admin_areas_page') }}">Areas</a></li>
+                <li><a href="{{ url_for('admin_readings_page') }}">Environmental Data</a></li>
+                <li><a href="{{ url_for('logout') }}" class="nav-btn-outline">Logout</a></li>
+                {% else %}
+                <li><a href="{{ url_for('index') }}">🏠 Home</a></li>
+                <li><a href="{{ url_for('dashboard') }}">🌍 Dashboard</a></li>
+                <li><a href="{{ url_for('cities_page') }}">🇮🇳 Cities</a></li>
+                <li><a href="{{ url_for('trends') }}">📊 Trends</a></li>
+                <li><a href="{{ url_for('report_page') }}">🚨 Report</a></li>
+                {% if session.get('user_id') %}
+                <li><a href="{{ url_for('my_reports_page') }}">My Reports</a></li>
+                <li><a href="{{ url_for('logout') }}" class="nav-btn-outline">Logout</a></li>
+                {% else %}
+                <li><a href="{{ url_for('login') }}" class="nav-btn">🔐 Login</a></li>
+                {% endif %}
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-container">
+        {% for category, message in messages %}
+        <div class="flash flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <main>{% block content %}{% endblock %}</main>
+
+    <footer class="footer">
+        <div class="container">
+            <p><strong>EcoSense</strong> – Know Your Environment. Understand the Change. Take Action.</p>
+            <p class="footer-sub">A research-based community solution for environmental awareness across India.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('navToggle')?.addEventListener('click', () => {
+            document.getElementById('navLinks').classList.toggle('open');
+        });
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

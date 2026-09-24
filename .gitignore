@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+*.db
+.env
+.env.*
+.venv/
+venv/
+static/uploads/reports/*
+!static/uploads/reports/.gitkeep
+.DS_Store
+.netlify/
+*.zip

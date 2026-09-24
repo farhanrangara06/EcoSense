@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+<div class="page-header admin-header">
+    <div class="container">
+        <h1>Admin Dashboard</h1>
+        <p>Manage environmental reports and data</p>
+    </div>
+</div>
+
+<div class="container page-content">
+    <div id="statsCards" class="stats-grid"></div>
+    <div class="admin-quick-links">
+        <a href="{{ url_for('admin_reports_page') }}" class="btn btn-primary">View All Reports</a>
+        <a href="{{ url_for('admin_areas_page') }}" class="btn btn-secondary">Manage Areas</a>
+        <a href="{{ url_for('admin_readings_page') }}" class="btn btn-secondary">Add Readings</a>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline">View Public Dashboard</a>
+    </div>
+    <h2>Recent Pending Reports</h2>
+    <div id="recentReports"></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    const res = await fetch('/api/admin/reports');
+    const data = await res.json();
+    const s = data.stats;
+    document.getElementById('statsCards').innerHTML = `
+        <div class="stat-card"><div class="stat-number">${s.total}</div><div class="stat-label">Total Reports</div></div>
+        <div class="stat-card stat-pending"><div class="stat-number">${s.pending||0}</div><div class="stat-label">Pending</div></div>
+        <div class="stat-card stat-reviewed"><div class="stat-number">${s.reviewed||0}</div><div class="stat-label">Reviewed</div></div>
+        <div class="stat-card stat-resolved"><div class="stat-number">${s.resolved||0}</div><div class="stat-label">Resolved</div></div>`;
+
+    const pending = data.reports.filter(r => r.status === 'Pending').slice(0, 5);
+    if (pending.length === 0) {
+        document.getElementById('recentReports').innerHTML = '<p class="empty-msg">No pending reports.</p>';
+    } else {
+        let html = '<table class="data-table"><thead><tr><th>ID</th><th>Area</th><th>Issue</th><th>Date</th><th>Action</th></tr></thead><tbody>';
+        pending.forEach(r => {
+            html += `<tr><td>${r.report_code}</td><td>${r.area_name}</td><td>${r.issue_type}</td>
+                <td>${new Date(r.created_at).toLocaleDateString('en-IN')}</td>
+                <td><a href="/admin/reports/${r.id}" class="btn btn-sm btn-primary">View</a></td></tr>`;
+        });
+        html += '</tbody></table>';
+        document.getElementById('recentReports').innerHTML = html;
+    }
+});
+</script>
+{% endblock %}
