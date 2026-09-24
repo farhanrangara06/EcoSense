@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const bcrypt = require('bcryptjs');
-const { getStore } = require('@netlify/blobs');
+const { connectLambda, getStore } = require('@netlify/blobs');
 
 const areasData = JSON.parse(
   fs.readFileSync(path.join(__dirname, 'data', 'areas.json'), 'utf8')
@@ -198,19 +198,9 @@ function analyzeTrend(values, param) {
   };
 }
 
-function createStore(context) {
-  if (context?.site?.id && context?.netlify?.blobs?.token) {
-    return getStore({
-      name: 'ecosense',
-      siteID: context.site.id,
-      token: context.netlify.blobs.token,
-    });
-  }
-  return getStore('ecosense');
-}
-
-async function getStoreData(context) {
-  const store = createStore(context);
+async function getStoreData(event) {
+  connectLambda(event);
+  const store = getStore('ecosense');
   const users = await store.get('users', { type: 'json' });
   const reports = await store.get('reports', { type: 'json' });
   const history = await store.get('history', { type: 'json' });
@@ -369,7 +359,7 @@ exports.handler = async (event, context) => {
     });
   }
 
-  const { store, users, reports, history } = await getStoreData(context);
+  const { store, users, reports, history } = await getStoreData(event);
   const allUsers = await ensureSeedData(store, users);
 
   if (path === '/api/login' && method === 'POST') {
