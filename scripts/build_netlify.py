@@ -52,6 +52,7 @@ def build_static_pages():
         'cities.html': 'cities.html',
         'login.html': 'login.html',
         'register.html': 'register.html',
+        'logout.html': 'logout.html',
         'report.html': 'report.html',
         'my-reports.html': 'my_reports.html',
         'admin.html': 'admin/dashboard.html',

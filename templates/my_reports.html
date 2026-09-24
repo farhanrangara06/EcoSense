@@ -69,7 +69,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <div><strong>Submitted:</strong> ${new Date(r.created_at).toLocaleString('en-IN')}</div>
             </div>
             <div class="detail-desc"><strong>Description:</strong><p>${r.description}</p></div>
-            ${r.photo ? `<img src="/static/${r.photo}" class="report-photo" alt="Report photo">` : ''}
+            ${r.photo ? `<img src="${r.photo.startsWith('data:') ? r.photo : '/static/' + r.photo}" class="report-photo" alt="Report photo">` : ''}
             <h3>Status History</h3>${timeline}`;
         listEl.style.display = 'none';
         detailEl.style.display = 'block';

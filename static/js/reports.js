@@ -2,8 +2,22 @@
  * EcoSense Report Submission JavaScript
  */
 
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+function photoSrc(photo) {
+    if (!photo) return '';
+    if (photo.startsWith('data:')) return photo;
+    return `/static/${photo}`;
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
-    // Load areas into dropdown
     const res = await fetch('/api/areas');
     const data = await res.json();
     const sel = document.getElementById('reportArea');
@@ -11,7 +25,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         sel.innerHTML += `<option value="${a.id}" ${i === 0 ? 'selected' : ''}>${a.name}, ${a.city}</option>`;
     });
 
-    // Handle form submission
     document.getElementById('reportForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
@@ -20,14 +33,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         btn.textContent = 'Submitting...';
 
         try {
+            const payload = {
+                area_id: formData.get('area_id'),
+                issue_type: formData.get('issue_type'),
+                description: formData.get('description'),
+            };
+            const photoFile = formData.get('photo');
+            if (photoFile && photoFile.size > 0) {
+                payload.photo_data = await fileToBase64(photoFile);
+                payload.photo_type = photoFile.type || 'image/jpeg';
+            }
+
             const res = await fetch('/api/reports', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    area_id: formData.get('area_id'),
-                    issue_type: formData.get('issue_type'),
-                    description: formData.get('description'),
-                }),
+                body: JSON.stringify(payload),
             });
             const result = await res.json();
 

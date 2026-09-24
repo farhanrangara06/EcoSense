@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Logout{% endblock %}
+{% block content %}
+<div class="container page-content text-center">
+    <p>Logging you out...</p>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+fetch('/api/logout').finally(() => { window.location.href = '/'; });
+</script>
+{% endblock %}

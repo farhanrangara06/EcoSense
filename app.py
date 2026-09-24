@@ -3,6 +3,7 @@ EcoSense - Community Environmental Awareness & Action Platform
 Main Flask Application
 """
 
+import base64
 import os
 from datetime import datetime, timedelta
 from functools import wraps
@@ -234,6 +235,12 @@ def api_register():
         conn.close()
 
 
+@app.route('/api/logout', methods=['GET', 'POST'])
+def api_logout():
+    session.clear()
+    return jsonify({'success': True, 'redirect': url_for('index')})
+
+
 @app.route('/logout')
 def logout():
     session.clear()
@@ -350,7 +357,14 @@ def api_submit_report():
         return jsonify({'error': 'Area, issue type, and description are required.'}), 400
 
     photo_path = None
-    if 'photo' in request.files:
+    if data.get('photo_data') and data.get('photo_type'):
+        ext = data['photo_type'].split('/')[-1] if '/' in data['photo_type'] else 'jpg'
+        filename = secure_filename(f"{datetime.now().strftime('%Y%m%d%H%M%S')}_photo.{ext}")
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        with open(file_path, 'wb') as photo_file:
+            photo_file.write(base64.b64decode(data['photo_data']))
+        photo_path = f'uploads/reports/{filename}'
+    elif 'photo' in request.files:
         file = request.files['photo']
         if file and file.filename and allowed_file(file.filename):
             filename = secure_filename(f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}")

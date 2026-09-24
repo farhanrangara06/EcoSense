@@ -198,8 +198,19 @@ function analyzeTrend(values, param) {
   };
 }
 
-async function getStoreData() {
-  const store = getStore('ecosense');
+function createStore(context) {
+  if (context?.site?.id && context?.netlify?.blobs?.token) {
+    return getStore({
+      name: 'ecosense',
+      siteID: context.site.id,
+      token: context.netlify.blobs.token,
+    });
+  }
+  return getStore('ecosense');
+}
+
+async function getStoreData(context) {
+  const store = createStore(context);
   const users = await store.get('users', { type: 'json' });
   const reports = await store.get('reports', { type: 'json' });
   const history = await store.get('history', { type: 'json' });
@@ -241,11 +252,15 @@ function routePath(event) {
   return cleaned;
 }
 
-exports.handler = async (event) => {
+exports.handler = async (event, context) => {
   const method = event.httpMethod;
   const path = routePath(event);
   const session = getSession(event);
   const demoScenario = parseCookies(event).ecosense_demo || null;
+
+  if (path === '/api/logout' && (method === 'GET' || method === 'POST')) {
+    return json(200, { success: true, redirect: '/' }, { 'Set-Cookie': clearSessionCookie() });
+  }
 
   if (path === '/api/areas' && method === 'GET') {
     return json(200, areasData);
@@ -354,7 +369,7 @@ exports.handler = async (event) => {
     });
   }
 
-  const { store, users, reports, history } = await getStoreData();
+  const { store, users, reports, history } = await getStoreData(context);
   const allUsers = await ensureSeedData(store, users);
 
   if (path === '/api/login' && method === 'POST') {
@@ -394,13 +409,17 @@ exports.handler = async (event) => {
   if (path === '/api/reports' && method === 'POST') {
     if (!session?.user_id) return json(401, { error: 'Login required.' });
     const body = JSON.parse(event.body || '{}');
+    let photo = null;
+    if (body.photo_data && body.photo_type) {
+      photo = `data:${body.photo_type};base64,${body.photo_data}`;
+    }
     const nextReport = {
       id: reports.length + 1,
       user_id: session.user_id,
       area_id: Number(body.area_id),
       issue_type: body.issue_type,
       description: body.description,
-      photo: null,
+      photo,
       status: 'Pending',
       created_at: new Date().toISOString(),
     };
@@ -423,6 +442,33 @@ exports.handler = async (event) => {
       report_id: formatReportId(nextReport.id),
       id: nextReport.id,
       area_name: area?.name,
+    });
+  }
+
+  const reportDetailMatch = path.match(/^\/api\/reports\/(\d+)$/);
+  if (reportDetailMatch && method === 'GET') {
+    if (!session?.user_id) return json(401, { error: 'Login required.' });
+    const reportId = Number(reportDetailMatch[1]);
+    const report = reports.find((entry) => entry.id === reportId);
+    if (!report) return json(404, { error: 'Report not found' });
+    if (session.role !== 'admin' && report.user_id !== session.user_id) {
+      return json(403, { error: 'Access denied' });
+    }
+    const user = allUsers.find((entry) => entry.id === report.user_id);
+    const reportHistory = history
+      .filter((entry) => entry.report_id === reportId)
+      .map((entry) => {
+        const admin = allUsers.find((u) => u.id === entry.changed_by);
+        return { ...entry, admin_name: admin?.name || null };
+      });
+    return json(200, {
+      report: {
+        ...report,
+        report_code: formatReportId(report.id),
+        area_name: getAreaById(report.area_id)?.name || 'Unknown',
+        user_name: user?.name || 'Unknown',
+      },
+      history: reportHistory,
     });
   }
 

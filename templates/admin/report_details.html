@@ -28,7 +28,8 @@
 {% endblock %}
 {% block scripts %}
 <script>
-const reportId = {{ report_id }};
+const pathMatch = window.location.pathname.match(/\/admin\/reports\/(\d+)/);
+const reportId = pathMatch ? parseInt(pathMatch[1], 10) : {{ report_id }};
 document.addEventListener('DOMContentLoaded', async () => {
     const res = await fetch(`/api/reports/${reportId}`);
     const data = await res.json();
@@ -45,7 +46,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <div><strong>Status:</strong> <span class="status-badge status-${r.status.toLowerCase()}">${r.status}</span></div>
             </div>
             <div class="detail-desc"><strong>Description:</strong><p>${r.description}</p></div>
-            ${r.photo ? `<img src="/static/${r.photo}" class="report-photo" alt="Report photo">` : ''}
+            ${r.photo ? `<img src="${r.photo.startsWith('data:') ? r.photo : '/static/' + r.photo}" class="report-photo" alt="Report photo">` : ''}
         </div>`;
 
     // Load current environmental readings for the area
