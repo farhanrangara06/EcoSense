@@ -48,6 +48,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'same-origin',
+                cache: 'no-store',
                 body: JSON.stringify(payload),
             });
             const result = await res.json();

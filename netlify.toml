@@ -7,6 +7,20 @@
   directory = "netlify/functions"
   included_files = ["netlify/functions/data/**"]
 
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Cache-Control = "no-store, no-cache, must-revalidate, private"
+    Pragma = "no-cache"
+    Expires = "0"
+
+[[headers]]
+  for = "/.netlify/functions/*"
+  [headers.values]
+    Cache-Control = "no-store, no-cache, must-revalidate, private"
+    Pragma = "no-cache"
+    Expires = "0"
+
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/api/:splat"

@@ -208,7 +208,7 @@ async function loadStore(event) {
   return getStore('ecosense-v2');
 }
 
-async function loadState(store) {
+async function seedState(store) {
   const existing = await store.get('app-data', { type: 'json' });
   if (existing) return existing;
 
@@ -225,7 +225,23 @@ async function loadState(store) {
     history: [],
   };
   await store.setJSON('app-data', state);
-  return state;
+  const confirmed = await store.get('app-data', { type: 'json' });
+  return confirmed || state;
+}
+
+async function loadState(store) {
+  const existing = await store.get('app-data', { type: 'json' });
+  if (existing) return existing;
+  return seedState(store);
+}
+
+async function loadStateFresh(store, retries = 4) {
+  for (let attempt = 0; attempt < retries; attempt++) {
+    const existing = await store.get('app-data', { type: 'json' });
+    if (existing) return existing;
+    await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
+  }
+  return seedState(store);
 }
 
 async function saveState(store, state) {
@@ -386,7 +402,9 @@ exports.handler = async (event, context) => {
 
   if (path === '/api/login' && method === 'POST') {
     const body = JSON.parse(event.body || '{}');
-    const user = allUsers.find((entry) => entry.email === (body.email || '').trim());
+    const email = (body.email || '').trim();
+    const loginState = await loadStateFresh(store);
+    const user = loginState.users.find((entry) => entry.email === email);
     const valid = user && await bcrypt.compare(body.password || '', user.password);
     if (!valid) return json(401, { error: 'Invalid email or password.' });
     const cookie = sessionCookie({
@@ -427,7 +445,7 @@ exports.handler = async (event, context) => {
   if (path === '/api/reports' && method === 'POST') {
     if (!session?.user_id) return json(401, { error: 'Login required.' });
     const body = JSON.parse(event.body || '{}');
-    const current = await loadState(store);
+    const current = await loadStateFresh(store);
     let photo = null;
     if (body.photo_data && body.photo_type) {
       photo = `data:${body.photo_type};base64,${body.photo_data}`;
@@ -493,7 +511,7 @@ exports.handler = async (event, context) => {
 
   if (path === '/api/my-reports' && method === 'GET') {
     if (!session?.user_id) return json(401, { error: 'Login required.' });
-    const freshState = await loadState(store);
+    const freshState = await loadStateFresh(store);
     const mine = freshState.reports
       .filter((report) => String(report.user_id) === String(session.user_id))
       .map((report) => ({
