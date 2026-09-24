@@ -212,8 +212,10 @@ async function getStoreData(event) {
   };
 }
 
-async function ensureSeedData(store, users) {
-  if (users.length) return users;
+async function ensureSeedData(store) {
+  const existingUsers = await store.get('users', { type: 'json' });
+  if (existingUsers !== null) return existingUsers;
+
   const password = await bcrypt.hash('admin123', 10);
   const seeded = [{
     id: 1,
@@ -359,8 +361,8 @@ exports.handler = async (event, context) => {
     });
   }
 
-  const { store, users, reports, history } = await getStoreData(event);
-  const allUsers = await ensureSeedData(store, users);
+  const { store, reports, history } = await getStoreData(event);
+  const allUsers = await ensureSeedData(store);
 
   if (path === '/api/login' && method === 'POST') {
     const body = JSON.parse(event.body || '{}');
